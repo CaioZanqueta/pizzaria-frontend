@@ -1,6 +1,6 @@
 "use client"
 
-import { use } from 'react'
+import { use, useEffect, useRef } from 'react'
 import styles from './styles.module.scss'
 import { RefreshCw } from 'lucide-react'
 import { OrderProps } from '@/lib/order.type'
@@ -16,6 +16,7 @@ interface Props {
 export function Orders({ orders }: Props) {
   const { isOpen, onRequestOpen } = use(OrderContext)
   const router = useRouter()
+  const intervalRef = useRef<NodeJS.Timeout | null>(null)
 
   async function handleDetailOrder( order_id: string ) {
     await onRequestOpen(order_id)
@@ -24,7 +25,23 @@ export function Orders({ orders }: Props) {
   function handleRefresh() {
     router.refresh()
     toast.success("Pedidos atualizados")
+    resetInterval() // Reseta o timer ao atualizar manualmente
   }
+
+  function resetInterval() {
+    if (intervalRef.current) clearInterval(intervalRef.current)
+    intervalRef.current = setInterval(() => {
+      handleRefresh()
+    }, 30 * 1000) // 30 segundos em milissegundos
+  }
+
+  useEffect(() => {
+    resetInterval() // Inicia o intervalo ao montar
+
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current)
+    } // Limpa o intervalo ao desmontar
+  }, [])
 
   return (
     <>
